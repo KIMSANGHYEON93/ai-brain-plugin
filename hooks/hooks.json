@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[ai-brain] 세션 시작 규칙: MEMORY.md §1(현재 상태)·§5(미해결)를 먼저 읽고, brain_stats로 실측과 대조한다. 볼트 md는 append-only — 덮어쓰기·삭제 금지(D7). 종료 시 MEMORY.md §4에 1행 추가.'"
+          }
+        ]
+      }
+    ]
+  }
+}

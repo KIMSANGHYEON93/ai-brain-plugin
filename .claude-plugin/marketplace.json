@@ -1,0 +1,13 @@
+{
+  "name": "ai-brain-plugin",
+  "owner": {
+    "name": "KIMSANGHYEON93"
+  },
+  "plugins": [
+    {
+      "name": "ai-brain",
+      "source": "./",
+      "description": "AI-Brain 볼트 운영 — Notion 미러 동기화 스킬, 사서·동기화·리뷰·검증 에이전트 4종, 주간 정리·승격 후보 커맨드. 별도로 설치한 ai-brain MCP 서버와 볼트가 있어야 동작한다."
+    }
+  ]
+}

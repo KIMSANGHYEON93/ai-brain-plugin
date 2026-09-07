@@ -1,0 +1,71 @@
+#!/bin/sh
+# ai-brain-plugin pre-push 게이트
+#
+# 이 리포는 공개 마켓플레이스다. `/plugin marketplace add <owner>/ai-brain-plugin` 은
+# **main 을 그 자리에서 읽는다** — main 이 깨지면 그 순간 설치하는 모든 사람이 깨진다.
+# 그래서 push 전에 되돌릴 수 없는 것부터 막는다.
+#
+# 설치: git config core.hooksPath .githooks
+set -e
+fail=0
+say() { printf '%s\n' "$*"; }
+
+say "── pre-push 게이트 ─────────────────────────"
+
+# ① 시크릿 — 파일이 아니라 **커밋 이력**을 본다.
+#    나중 커밋에서 지워도 이력에는 남는다. 공개 리포에서는 그것이 유출이다.
+if command -v gitleaks >/dev/null 2>&1; then
+  if gitleaks git . --no-banner --redact >/dev/null 2>&1; then
+    say "✓ gitleaks: 커밋 이력 깨끗"
+  else
+    say "✗ gitleaks: 이력에서 시크릿 발견 — push 중단"
+    gitleaks git . --no-banner --redact 2>&1 | grep -E "RuleID|File|Commit" || true
+    fail=1
+  fi
+else
+  say "! gitleaks 없음 — 시크릿 검사를 건너뛴다(go install github.com/zricethezav/gitleaks/v8@latest)"
+  say "  주의: 0건이 아니라 '검사 안 함'이다."
+fi
+
+# ② 플레이스홀더 — 남아 있으면 마켓플레이스 등록이 깨진다.
+#    문자열을 쪼개 두는 이유: 안 그러면 이 훅 파일 자체가 검사에 걸린다.
+#    .githooks(이 검사 자체)와 CONTRIBUTING.md(규칙을 설명하는 문서)는 정당한 언급이라 제외한다.
+PH="TODO-GITHUB""-USERNAME"
+hits=$(grep -rIn "$PH" . --exclude-dir=.git --exclude-dir=.githooks --exclude=CONTRIBUTING.md 2>/dev/null || true)
+if [ -n "$hits" ]; then
+  say "✗ 플레이스홀더 잔존 — push 중단:"
+  printf '%s\n' "$hits" | sed 's/^/    /'
+  fail=1
+else
+  say "✓ 플레이스홀더 없음"
+fi
+
+# ③ 매니페스트 — JSON 이 깨지면 설치가 통째로 실패한다.
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .mcp.json hooks/hooks.json; do
+  [ -f "$f" ] || { say "✗ 없음: $f"; fail=1; continue; }
+  if python -c "import json,sys;json.load(open(sys.argv[1],encoding='utf-8'))" "$f" 2>/dev/null \
+     || python3 -c "import json,sys;json.load(open(sys.argv[1],encoding='utf-8'))" "$f" 2>/dev/null; then
+    :
+  else
+    say "✗ JSON 파싱 실패: $f"; fail=1
+  fi
+done
+[ "$fail" = 0 ] && say "✓ 매니페스트 4종 유효"
+
+# ④ 규격 위치 — plugin.json 은 .claude-plugin/ 안, .mcp.json 은 루트.
+[ -f .claude-plugin/.mcp.json ] && { say "✗ .mcp.json 이 .claude-plugin/ 안에 있다 (루트여야 한다)"; fail=1; }
+
+# ⑤ 버전 일치 — 태그를 밀 때 plugin.json 버전과 다르면 설치본과 릴리스가 어긋난다.
+pushed_tag=$(git tag --points-at HEAD | grep '^v' | head -1 || true)
+if [ -n "$pushed_tag" ]; then
+  pv=$(python3 -c "import json;print(json.load(open('.claude-plugin/plugin.json',encoding='utf-8'))['version'])" 2>/dev/null || echo "?")
+  if [ "v$pv" = "$pushed_tag" ]; then
+    say "✓ 태그 $pushed_tag = plugin.json $pv"
+  else
+    say "✗ 태그 $pushed_tag ≠ plugin.json $pv — 한쪽을 맞춰라"; fail=1
+  fi
+fi
+
+say "───────────────────────────────────────────"
+[ "$fail" = 0 ] || { say "push 중단. 위 항목을 고친 뒤 다시 시도한다."; exit 1; }
+say "통과."

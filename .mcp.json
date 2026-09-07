@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "ai-brain": {
+      "command": "${LOCALAPPDATA}\\ai-brain-mcp\\.venv\\Scripts\\python.exe",
+      "args": [
+        "${AI_BRAIN_VAULT}\\_mcp\\server.py"
+      ],
+      "env": {
+        "AI_BRAIN_VAULT": "${AI_BRAIN_VAULT}",
+        "AI_BRAIN_DB": "${LOCALAPPDATA}\\ai-brain-mcp\\index.db",
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      }
+    }
+  }
+}

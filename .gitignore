@@ -1,0 +1,21 @@
+# 볼트 데이터는 절대 이 리포에 들어오지 않는다
+00_Inbox/
+10_Terms/
+20_Tools/
+30_Logs/
+35_Runs/
+40_Runbooks/
+50_Skills/
+90_Index/
+MEMORY.md
+BLUEPRINT.md
+PLAN.md
+
+# 로컬 산출물
+__pycache__/
+*.pyc
+*.db
+.venv/
+claude_desktop_config.generated.json
+.DS_Store
+Thumbs.db

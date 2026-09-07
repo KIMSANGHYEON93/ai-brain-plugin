@@ -1,0 +1,17 @@
+{
+  "name": "ai-brain",
+  "version": "0.2.0",
+  "description": "개인 지식 볼트(Obsidian md)를 다루는 스킬·에이전트 묶음. 볼트의 런북에서 컴파일된 파생물이며, 절차 본문은 담지 않고 실행 시점에 MCP 리소스로 읽는다.",
+  "author": {
+    "name": "KIMSANGHYEON93"
+  },
+  "homepage": "https://github.com/KIMSANGHYEON93/ai-brain-plugin",
+  "license": "MIT",
+  "keywords": [
+    "knowledge-vault",
+    "obsidian",
+    "notion",
+    "mcp",
+    "korean"
+  ]
+}

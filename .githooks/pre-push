@@ -55,7 +55,22 @@ done
 # ④ 규격 위치 — plugin.json 은 .claude-plugin/ 안, .mcp.json 은 루트.
 [ -f .claude-plugin/.mcp.json ] && { say "✗ .mcp.json 이 .claude-plugin/ 안에 있다 (루트여야 한다)"; fail=1; }
 
-# ⑤ 버전 일치 — 태그를 밀 때 plugin.json 버전과 다르면 설치본과 릴리스가 어긋난다.
+# ⑤ 워크스페이스 고유 식별자 — D21. gitleaks 는 이걸 못 잡는다.
+#    Notion 페이지/DB id 도 Drive 폴더 id 도 "시크릿"이 아니라 **남의 워크스페이스를 가리키는 주소**다.
+#    유출이 아니라 오작동으로 나타난다 — 설치한 사람이 내 격리 페이지를 건드리게 된다.
+#    2026-09-07 볼트 _plugin/ 사본에서 실제로 2건 발견됐다. 그래서 게이트로 만든다.
+ids=$(grep -rInE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}' . \
+        --exclude-dir=.git --exclude-dir=.githooks --exclude=CONTRIBUTING.md 2>/dev/null || true)
+if [ -n "$ids" ]; then
+  say "✗ 워크스페이스 고유 id 로 보이는 문자열 발견 (D21) — push 중단:"
+  printf '%s\n' "$ids" | sed 's/^/    /'
+  say "  런타임에 brain://runbook/... 에서 읽도록 바꿔라. 배포물에 박지 않는다."
+  fail=1
+else
+  say "✓ 워크스페이스 고유 id 없음"
+fi
+
+# ⑥ 버전 일치 — 태그를 밀 때 plugin.json 버전과 다르면 설치본과 릴리스가 어긋난다.
 pushed_tag=$(git tag --points-at HEAD | grep '^v' | head -1 || true)
 if [ -n "$pushed_tag" ]; then
   pv=$(python3 -c "import json;print(json.load(open('.claude-plugin/plugin.json',encoding='utf-8'))['version'])" 2>/dev/null || echo "?")

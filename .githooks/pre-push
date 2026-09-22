@@ -59,8 +59,13 @@ done
 #    Notion 페이지/DB id 도 Drive 폴더 id 도 "시크릿"이 아니라 **남의 워크스페이스를 가리키는 주소**다.
 #    유출이 아니라 오작동으로 나타난다 — 설치한 사람이 내 격리 페이지를 건드리게 된다.
 #    2026-09-07 볼트 _plugin/ 사본에서 실제로 2건 발견됐다. 그래서 게이트로 만든다.
+#    예외 1건: wiki/claude-wiki.json 의 "lastRunCommit" 줄. 40자리 git 커밋 해시라
+#    [0-9a-f]{32} 에 걸리지만 워크스페이스 주소가 아니다. 파일 통째가 아니라 **그 줄만** 뺀다 —
+#    같은 파일의 다른 줄에 id 가 들어오면 여전히 잡힌다.
 ids=$(grep -rInE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}' . \
-        --exclude-dir=.git --exclude-dir=.githooks --exclude=CONTRIBUTING.md 2>/dev/null || true)
+        --exclude-dir=.git --exclude-dir=.githooks --exclude=CONTRIBUTING.md 2>/dev/null \
+      | grep -vE '^\./wiki/claude-wiki\.json:[0-9]+:[[:space:]]*"lastRunCommit"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}",?[[:space:]]*$' \
+      || true)
 if [ -n "$ids" ]; then
   say "✗ 워크스페이스 고유 id 로 보이는 문자열 발견 (D21) — push 중단:"
   printf '%s\n' "$ids" | sed 's/^/    /'
